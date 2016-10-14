@@ -31,6 +31,15 @@ def oneHotEncode(y):
     return OHX
 
 
+def oneHotDecode(y_mat):
+    """
+    one hot decoding: y = [[0,0,0],[0,1,0],[0,0,1]] => [0,1,2]
+    :param y_mat: one-hot y matrix (n x c)
+    :return: y (n x 1)
+    """
+    return np.argmax(y_mat, axis=1)
+
+
 class Learner:
     __metaclass__ = ABCMeta
 
@@ -121,7 +130,7 @@ class Logistic(Learner):
         :param w: weights
         :return: grad (w size)
         """
-        grad = -np.dot(X.T, y - sigmoid(np.dot(X, self.w)))
+        grad = np.dot(X.T, sigmoid(np.dot(X, self.w)) - y)
         return grad
 
     def predict(self, X):
@@ -171,8 +180,8 @@ class Softmax(Learner):
         """
         y_mat = oneHotEncode(y) if self._oneHot else y
         prob = self.compute_prob(X)
-        grad = -(np.dot((y_mat - prob).T, X) if np.ndim(X) > 1
-                 else np.outer(y_mat - prob, X))
+        grad = (np.dot((prob - y_mat).T, X) if np.ndim(X) > 1
+                 else np.outer(prob - y_mat, X))
         return grad
 
     def compute_prob(self, X):
@@ -194,3 +203,13 @@ class Softmax(Learner):
         prob = self.compute_prob(X)
         pred = np.argmax(prob, axis=1)
         return pred
+
+
+def relative_error(y_esti, y_true):
+    return np.linalg.norm(y_esti - y_true) / np.linalg.norm(y_true)
+
+
+def accuracy(y_pred, y_true):
+    no_cor = sum(y_pred == y_true)
+    no_ttl = y_true.shape[0]
+    return float(no_cor) / no_ttl

@@ -56,7 +56,7 @@ def serial_sgd(learner, X, y, gamma=0.0001, max_iter=100, tol=0.01):
     :return: weight, [objs]: object function values in each iteration
     """
     n, d = X.shape
-    objs = []
+    objs, time_cost = [], []
     print("Serial SGD: size (%d, %d)" % (n, d))
     for i in xrange(max_iter):
         t_start =time.time()
@@ -64,10 +64,11 @@ def serial_sgd(learner, X, y, gamma=0.0001, max_iter=100, tol=0.01):
         sgd_one_update(learner, X, y, gamma, random_seq)
         t_end = time.time()
         objs.append(learner.compute_loss(X, y))
-        print("epoch: %d, obj = %f, time = %f" % (i, objs[i], t_end - t_start))
+        time_cost.append(t_end - t_start)
+        print("epoch: %d, obj = %f, time = %f" % (i, objs[i], time_cost[i]))
         # if objs[-1] / module_y < tol:
         #     break
-    return learner, objs
+    return learner, objs, time_cost
 
 
 def parallel_random_split(learner, X, y, gamma=0.0001, max_iter=100, tol=0.01, P=1):
@@ -86,11 +87,10 @@ def parallel_random_split(learner, X, y, gamma=0.0001, max_iter=100, tol=0.01, P
     :param tol: the tolerated relative error: ||Xw - y|| / ||y||
     :return: weight, [objs]: object function values in each iteration
     :param P: number of cores
-    :return: weights, [objs]: object function values in each iterations
+    :return: weights, [objs]: object function values in each iterations, [times]: time consumption in each iteration
     """
     n, d = X.shape
-    objs = []
-    # module_y = np.linalg.norm(y)
+    objs, time_cost = [], []
     # parallel
     P = min(P, multiprocessing.cpu_count())
     # create shared memory
@@ -110,10 +110,11 @@ def parallel_random_split(learner, X, y, gamma=0.0001, max_iter=100, tol=0.01, P
         learner.w = np.average(w_updates, 0)
         t_end = time.time()
         objs.append(learner.compute_loss(X, y))
-        print("epoch: %d, obj = %f, time = %f" % (i, objs[i], t_end - t_start))
+        time_cost.append(t_end - t_start)
+        print("epoch: %d, obj = %f, time = %f" % (i, objs[i], time_cost[i]))
         # if objs[-1] / module_y < tol:
         #     break
-    return learner, objs
+    return learner, objs, time_cost
 
 
 def parallel_correlation_split(learner, X, y, gamma=0.0001, max_iter=100, tol=0.01, P=1):
@@ -135,7 +136,7 @@ def parallel_correlation_split(learner, X, y, gamma=0.0001, max_iter=100, tol=0.
     :return: weights, [objs]: object function values in each iterations
     """
     n, d = X.shape
-    objs = []
+    objs, time_cost = [], []
     # parallel
     P = min(P, multiprocessing.cpu_count())
     seq_par = split_data(X, P, 'cross-correlation')
@@ -157,7 +158,8 @@ def parallel_correlation_split(learner, X, y, gamma=0.0001, max_iter=100, tol=0.
         learner.w = np.average(w_updates, 0)
         t_end = time.time()
         objs.append(learner.compute_loss(X, y))
-        print("epoch: %d, obj = %f, time = %f" % (i, objs[i], t_end - t_start))
+        time_cost.append(t_end - t_start)
+        print("epoch: %d, obj = %f, time = %f" % (i, objs[i], time_cost[i]))
         # if objs[-1] / module_y < tol:
         #     break
-    return learner, objs
+    return learner, objs, time_cost
