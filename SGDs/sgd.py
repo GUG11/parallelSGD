@@ -5,6 +5,7 @@ from sharedmem import sharedmem
 import time
 import graph
 from misc import utils
+import loss_functions
 
 
 def split_data(X, P, split_mode):
@@ -27,22 +28,24 @@ def split_data(X, P, split_mode):
     return seq_par
 
 
-def sgd_one_update(X, y, w, gamma, random_seq):
+def sgd_one_update(X, y, w0, gamma, grad_func, random_seq):
     """
     one step SGD, do not use np.dot(), which is automatically parallelized.
     :param X: data (list)
     :param y: target (list)
-    :param w: weights (list)
+    :param w0: weights (list)
+    :param grad_func: gradient function return the matrix with same size as w0
     :param gamma: relaxation factor
     :param random_seq: update order
     :return: updated weight
     """
+    w = w0
     for i in random_seq:
-        w -= 2 * gamma * (np.dot(X[i], w) - y[i]) * X[i]
+        w -= 2 * gamma * grad_func(X[i], y[i], w)
     return w
 
 
-def serial_sgd(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.01):
+def serial_sgd(X, y, gamma=0.0001, w0=None, grad_func=loss_functions.grad_LS, max_iter=100, tol=0.01):
     """
     serial SGD
         w <- w - gamma * dl / dw
@@ -50,6 +53,7 @@ def serial_sgd(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.01):
     :param y: target
     :param gamma: relaxation factor
     :param w0: initial weights
+    :param grad_func: gradient function
     :param max_iter: maximum number of iterations
     :param tol: the tolerated relative error: ||Xw - y|| / ||y||
     :return: weight, [objs]: object function values in each iteration
@@ -62,7 +66,7 @@ def serial_sgd(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.01):
     for i in xrange(max_iter):
         t_start =time.time()
         random_seq = np.random.permutation(n)
-        w = sgd_one_update(X, y, w, gamma, random_seq)
+        w = sgd_one_update(X, y, w, gamma, grad_func, random_seq)
         t_end = time.time()
         objs.append(np.linalg.norm(np.dot(X, w) - y))
         print("epoch: %d, obj = %f, time = %f" % (i, objs[i], t_end - t_start))
@@ -71,7 +75,7 @@ def serial_sgd(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.01):
     return w, objs
 
 
-def parallel_random_split(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.01, P=1):
+def parallel_random_split(X, y, gamma=0.0001, w0=None,grad_func=loss_functions.grad_LS, max_iter=100, tol=0.01, P=1):
     """
     parallel SGD
         split data into P subsets
@@ -82,6 +86,7 @@ def parallel_random_split(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.01, P
     :param y: target
     :param gamma: relaxation factor
     :param w0: initial weights
+    :param grad_func: gradient function
     :param max_iter: maximum number of iterations
     :param tol: the tolerated relative error: ||Xw - y|| / ||y||
     :return: weight, [objs]: object function values in each iteration
@@ -104,7 +109,7 @@ def parallel_random_split(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.01, P
         w_par = [deepcopy(w) for x in xrange(P)]
         seq_par = split_data(X, P, 'random')
         results = [pool.apply_async(sgd_one_update,
-                                    args=(shared_X, shared_y, w_par[p], gamma, seq_par[p]))
+                                    args=(shared_X, shared_y, w_par[p], gamma, grad_func, seq_par[p]))
                     for p in xrange(P)]
         w_updates = np.array([res.get() for res in results])
         # average
@@ -117,7 +122,7 @@ def parallel_random_split(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.01, P
     return w, objs
 
 
-def parallel_correlation_split(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.01, P=1):
+def parallel_correlation_split(X, y, gamma=0.0001, w0=None, grad_func=loss_functions.grad_LS, max_iter=100, tol=0.01, P=1):
     """
     parallel SGD
         split data into P subsets
@@ -128,6 +133,7 @@ def parallel_correlation_split(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.
     :param y: target
     :param gamma: relaxation factor
     :param w0: initial weights
+    :param grad_func: gradient function
     :param max_iter: maximum number of iterations
     :param tol: the tolerated relative error: ||Xw - y|| / ||y||
     :return: weight, [objs]: object function values in each iteration
@@ -152,7 +158,7 @@ def parallel_correlation_split(X, y, gamma=0.0001, w0=None, max_iter=100, tol=0.
         for p in xrange(P):
             np.random.shuffle(seq_par[p])
         results = [pool.apply_async(sgd_one_update,
-                                    args=(shared_X, shared_y, w_par[p], gamma, seq_par[p]))
+                                    args=(shared_X, shared_y, w_par[p], gamma, grad_func, seq_par[p]))
                    for p in xrange(P)]
         w_updates = np.array([res.get() for res in results])
         # average

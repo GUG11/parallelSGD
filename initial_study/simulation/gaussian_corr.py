@@ -5,7 +5,7 @@ import networkx as nx
 from SGDs import graph
 
 if __name__ == '__main__':
-    n, d = 200, 100
+    n, d = 500, 100
     X = np.random.randn(n, d)
     cc = utils.xcorr(X)
     c_sort = np.sort(np.abs(cc.ravel()))
