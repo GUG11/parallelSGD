@@ -1,9 +1,6 @@
 """A very simple MNIST classifier"""
 import numpy as np
 from copy import deepcopy
-import multiprocessing
-from sharedmem import sharedmem
-import time
 from SGDs import sgd
 import os
 from SGDs.loss_functions import Softmax

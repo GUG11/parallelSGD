@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.sparse
 import os
 from tensorflow.examples.tutorials.mnist import input_data
 import matplotlib.pyplot as plt

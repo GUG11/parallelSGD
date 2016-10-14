@@ -9,7 +9,6 @@ def softmax(z):
     :param z: (n x c)
     :return: softmax of z (n x 1)
     """
-    # z -= np.max(z)
     expz = np.exp(z)
     sm = None
     if np.ndim(z) == 1:
