@@ -1,6 +1,7 @@
 import numpy as np
 from SGDs import sgd
 
+
 if __name__ == '__main__':
     n, d = 500, 100
     np.random.seed(0)

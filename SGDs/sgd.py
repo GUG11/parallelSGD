@@ -5,7 +5,6 @@ from sharedmem import sharedmem
 import time
 import graph
 from misc import utils
-import loss_functions
 
 
 def split_data(X, P, split_mode):
@@ -28,65 +27,61 @@ def split_data(X, P, split_mode):
     return seq_par
 
 
-def sgd_one_update(X, y, w0, gamma, grad_func, random_seq):
+def sgd_one_update(learner, X, y, learning_rate, random_seq):
     """
     one step SGD, do not use np.dot(), which is automatically parallelized.
+    :param learner: learner
     :param X: data (list)
     :param y: target (list)
-    :param w0: weights (list)
-    :param grad_func: gradient function return the matrix with same size as w0
-    :param gamma: relaxation factor
+    :param learning_rate: learning rate
     :param random_seq: update order
     :return: updated weight
     """
-    w = w0
     for i in random_seq:
-        w -= 2 * gamma * grad_func(X[i], y[i], w)
-    return w
+        learner.update(X[i], y[i], learning_rate)
+    return learner.w
 
 
-def serial_sgd(X, y, gamma=0.0001, w0=None, grad_func=loss_functions.grad_LS, max_iter=100, tol=0.01):
+def serial_sgd(learner, X, y, gamma=0.0001, max_iter=100, tol=0.01):
     """
     serial SGD
         w <- w - gamma * dl / dw
+    :param learner: learner
     :param X: data
     :param y: target
     :param gamma: relaxation factor
     :param w0: initial weights
-    :param grad_func: gradient function
     :param max_iter: maximum number of iterations
     :param tol: the tolerated relative error: ||Xw - y|| / ||y||
     :return: weight, [objs]: object function values in each iteration
     """
     n, d = X.shape
-    w = w0 if w0 else np.zeros(d)
     objs = []
-    module_y = np.linalg.norm(y)
     print("Serial SGD: size (%d, %d)" % (n, d))
     for i in xrange(max_iter):
         t_start =time.time()
         random_seq = np.random.permutation(n)
-        w = sgd_one_update(X, y, w, gamma, grad_func, random_seq)
+        sgd_one_update(learner, X, y, gamma, random_seq)
         t_end = time.time()
-        objs.append(np.linalg.norm(np.dot(X, w) - y))
+        objs.append(learner.compute_loss(X, y))
         print("epoch: %d, obj = %f, time = %f" % (i, objs[i], t_end - t_start))
-        if objs[-1] / module_y < tol:
-            break
-    return w, objs
+        # if objs[-1] / module_y < tol:
+        #     break
+    return learner, objs
 
 
-def parallel_random_split(X, y, gamma=0.0001, w0=None,grad_func=loss_functions.grad_LS, max_iter=100, tol=0.01, P=1):
+def parallel_random_split(learner, X, y, gamma=0.0001, max_iter=100, tol=0.01, P=1):
     """
     parallel SGD
         split data into P subsets
         dispatch each set across cores from 1 to P
         SGD updates in each core
         collects updates in each core and average them
+    :param learner: learner
     :param X: data
     :param y: target
     :param gamma: relaxation factor
     :param w0: initial weights
-    :param grad_func: gradient function
     :param max_iter: maximum number of iterations
     :param tol: the tolerated relative error: ||Xw - y|| / ||y||
     :return: weight, [objs]: object function values in each iteration
@@ -94,9 +89,8 @@ def parallel_random_split(X, y, gamma=0.0001, w0=None,grad_func=loss_functions.g
     :return: weights, [objs]: object function values in each iterations
     """
     n, d = X.shape
-    w = w0 if w0 else np.zeros(d)
     objs = []
-    module_y = np.linalg.norm(y)
+    # module_y = np.linalg.norm(y)
     # parallel
     P = min(P, multiprocessing.cpu_count())
     # create shared memory
@@ -106,34 +100,34 @@ def parallel_random_split(X, y, gamma=0.0001, w0=None,grad_func=loss_functions.g
     pool = multiprocessing.Pool(P)
     for i in xrange(max_iter):
         t_start = time.time()
-        w_par = [deepcopy(w) for x in xrange(P)]
+        learners = [deepcopy(learner) for p in xrange(P)]
         seq_par = split_data(X, P, 'random')
         results = [pool.apply_async(sgd_one_update,
-                                    args=(shared_X, shared_y, w_par[p], gamma, grad_func, seq_par[p]))
+                                    args=(learners[p], shared_X, shared_y, gamma, seq_par[p]))
                     for p in xrange(P)]
         w_updates = np.array([res.get() for res in results])
         # average
-        w = np.average(w_updates, 0)
+        learner.w = np.average(w_updates, 0)
         t_end = time.time()
-        objs.append(np.linalg.norm(np.dot(X, w) - y))
+        objs.append(learner.compute_loss(X, y))
         print("epoch: %d, obj = %f, time = %f" % (i, objs[i], t_end - t_start))
-        if objs[-1] / module_y < tol:
-            break
-    return w, objs
+        # if objs[-1] / module_y < tol:
+        #     break
+    return learner, objs
 
 
-def parallel_correlation_split(X, y, gamma=0.0001, w0=None, grad_func=loss_functions.grad_LS, max_iter=100, tol=0.01, P=1):
+def parallel_correlation_split(learner, X, y, gamma=0.0001, max_iter=100, tol=0.01, P=1):
     """
     parallel SGD
         split data into P subsets
         dispatch each set across cores from 1 to P
         SGD updates in each core
         collects updates in each core and average them
+    :param learner: learner
     :param X: data
     :param y: target
     :param gamma: relaxation factor
     :param w0: initial weights
-    :param grad_func: gradient function
     :param max_iter: maximum number of iterations
     :param tol: the tolerated relative error: ||Xw - y|| / ||y||
     :return: weight, [objs]: object function values in each iteration
@@ -141,9 +135,7 @@ def parallel_correlation_split(X, y, gamma=0.0001, w0=None, grad_func=loss_funct
     :return: weights, [objs]: object function values in each iterations
     """
     n, d = X.shape
-    w = w0 if w0 else np.zeros(d)
     objs = []
-    module_y = np.linalg.norm(y)
     # parallel
     P = min(P, multiprocessing.cpu_count())
     seq_par = split_data(X, P, 'cross-correlation')
@@ -154,18 +146,18 @@ def parallel_correlation_split(X, y, gamma=0.0001, w0=None, grad_func=loss_funct
     pool = multiprocessing.Pool(P)
     for i in xrange(max_iter):
         t_start = time.time()
-        w_par = [deepcopy(w) for x in xrange(P)]
+        learners = [deepcopy(learner) for p in xrange(P)]
         for p in xrange(P):
             np.random.shuffle(seq_par[p])
         results = [pool.apply_async(sgd_one_update,
-                                    args=(shared_X, shared_y, w_par[p], gamma, grad_func, seq_par[p]))
+                                    args=(learners[p], shared_X, shared_y, gamma, seq_par[p]))
                    for p in xrange(P)]
         w_updates = np.array([res.get() for res in results])
         # average
-        w = np.average(w_updates, 0)
+        learner.w = np.average(w_updates, 0)
         t_end = time.time()
-        objs.append(np.linalg.norm(np.dot(X, w) - y))
+        objs.append(learner.compute_loss(X, y))
         print("epoch: %d, obj = %f, time = %f" % (i, objs[i], t_end - t_start))
-        if objs[-1] / module_y < tol:
-            break
-    return w, objs
+        # if objs[-1] / module_y < tol:
+        #     break
+    return learner, objs
