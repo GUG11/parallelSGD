@@ -164,7 +164,9 @@ class Softmax(Learner):
         """
         y_mat = oneHotEncode(y) if self._oneHot else y
         prob = self.compute_prob(X)
-        loss = -np.sum(y_mat * np.log(prob))
+        entropy = y_mat * np.log(prob)
+        entropy[np.isnan(entropy)] = 0   # 0 * inf (log 0) = nan
+        loss = -np.sum(entropy)
         return loss
 
     def compute_grad(self, X, y):
