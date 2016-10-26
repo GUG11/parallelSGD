@@ -20,7 +20,7 @@ def split_data(X, P, split_mode):
         random_seq = np.random.permutation(n)
         seq_par = [random_seq[x::P] for x in range(P)]
     elif split_mode == 'cross-correlation':
-        cc = utils.xcorr(np.abs(X))
+        cc, _ = utils.xcorr(np.abs(X))
         G = graph.gen_corr_graph(np.abs(cc))
         subGs = graph.split_evenly(G, P)
         seq_par = [x.nodes() for x in subGs]
@@ -105,6 +105,8 @@ def parallel_sgd(learner, X, y, data_partition=None, gamma=0.0001, max_iter=100,
         learners = [deepcopy(learner) for p in xrange(P)]
         if data_partition is None:
             seq_par = split_data(X, P, 'random')
+        elif isinstance(data_partition, graph.ConflictGraph):
+            seq_par = data_partition.gen_partition(P)
         else:
             seq_par = [np.random.permutation(data_partition[p]) for
                        p in xrange(P)]
@@ -134,13 +136,15 @@ def max_learning_rate(sgd_algo, learner, lo, hi, bin_tol, **args):
     :param args: arguments for the SGD algorithm
     :return: maximum learning rate
     """
-    while bin_tol < hi - lo:
+    trained_learner, objs, time_cost = None, None, None
+    mid = hi
+    while bin_tol < hi - lo or hi == mid:
         mid = (hi + lo) / 2
         print ('try learning rate: %f', mid)
         try:
-            sgd_algo(deepcopy(learner), gamma=mid, **args)
+            trained_learner, objs, time_cost = sgd_algo(deepcopy(learner), gamma=mid, **args)
             lo = mid
         except RuntimeError:
             print('learning rate %f too large' % mid)
             hi = mid
-    return lo
+    return lo, trained_learner, objs, time_cost
