@@ -1,4 +1,4 @@
-.idea
+pthon_code/.idea
 data
-sharedmem
-python3rdparty
+python_code/sharedmem
+python_code/python3rdparty
