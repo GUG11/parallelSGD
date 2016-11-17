@@ -8,8 +8,7 @@ arma::mat oneHotEncode(const arma::mat& y);
 arma::mat oneHotDecode(const arma::mat& OHX);
 
 class Learner {
-protected:
-    arma::mat w;
+protected: arma::mat w;
     std::string type;   // regressor, classifier
 public:
     Learner(const arma::mat& w0);
