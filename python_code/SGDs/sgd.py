@@ -2,7 +2,6 @@ import numpy as np
 from copy import deepcopy
 import multiprocessing
 from sharedmem import sharedmem
-import SharedArray as sa
 import time
 import graph
 import os
@@ -141,40 +140,38 @@ def parallel_sgd(learner, X, y, w, data_partition=None, gamma=0.0001, max_iter=1
     # average
     w = np.average(w_updates, 0)
     return w, sgd_profs
-   
 
 
-
-def hogwild(learner, X, y, w, gamma=0.0001, max_iter=100, tol=0.01, 
-    record_settings={'print_period': 100, 'save_period': 1}, P=1):
-    """
-    Hogwild lock-free multithreading SGD
-    :param learner: learner
-    :param X: data
-    :param y: target
-    :param w: initial parameters of model (volatile)
-    :param gamma: relaxation factor
-    :param max_iter: maximum number of iterations
-    :param tol: the tolerated relative error: ||Xw - y|| / ||y||
-    :return: weight, [objs]: object function values in each iteration
-    :param P: number of cores
-    :return: weights, [objs]: object function values in each iterations, [times]: time consumption in each iteration
-    """
-    n, d = X.shape
-    objs, time_cost = [], []
-    # parallel
-    P = min(P, multiprocessing.cpu_count())
-    # create shared memory
-    shared_X = sharedmem.copy(X)
-    shared_y = sharedmem.copy(y)
-    print("Parallel SGD: size (%d, %d), cores: %d" % (n, d, P))
-    pool = multiprocessing.Pool(P)
-    shared_w = sa.create("weight", w.shape)
-    results = [pool.apply_async(serial_sgd,
-                    args=(learner, shared_X, shared_y, w, gamma, max_iter, tol, record_settings))
-               for p in xrange(P)]
-    sa.delete('weight')
-    return deepcopy(shared_w), 1#, objs, time_cost
+# def hogwild(learner, X, y, w, gamma=0.0001, max_iter=100, tol=0.01, 
+#     record_settings={'print_period': 100, 'save_period': 1}, P=1):
+#     """
+#     Hogwild lock-free multithreading SGD
+#     :param learner: learner
+#     :param X: data
+#     :param y: target
+#     :param w: initial parameters of model (volatile)
+#     :param gamma: relaxation factor
+#     :param max_iter: maximum number of iterations
+#     :param tol: the tolerated relative error: ||Xw - y|| / ||y||
+#     :return: weight, [objs]: object function values in each iteration
+#     :param P: number of cores
+#     :return: weights, [objs]: object function values in each iterations, [times]: time consumption in each iteration
+#     """
+#     n, d = X.shape
+#     objs, time_cost = [], []
+#     # parallel
+#     P = min(P, multiprocessing.cpu_count())
+#     # create shared memory
+#     shared_X = sharedmem.copy(X)
+#     shared_y = sharedmem.copy(y)
+#     print("Parallel SGD: size (%d, %d), cores: %d" % (n, d, P))
+#     pool = multiprocessing.Pool(P)
+#     shared_w = sa.create("weight", w.shape)
+#     results = [pool.apply_async(serial_sgd,
+#                     args=(learner, shared_X, shared_y, w, gamma, max_iter, tol, record_settings))
+#                for p in xrange(P)]
+#     sa.delete('weight')
+#     return deepcopy(shared_w), 1#, objs, time_cost
 
 
 def max_learning_rate(sgd_algo, learner, lo, hi, bin_tol, **args):
