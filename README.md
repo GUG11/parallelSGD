@@ -11,6 +11,6 @@ Huayu Zhang, UW-Madison
 [numpy](http://www.numpy.org/)
 
 ### Demos
-simulation: [gaussian matrix](https://github.com/GUG11/parallel_sgd/blob/master/initial_study/simulation/gaussian.py)
+simulation: [gaussian matrix](https://github.com/GUG11/parallel_sgd/blob/master/python_code/initial_study/simulation/gaussian.py)
 
-real data: [MNIST softmax](https://github.com/GUG11/parallel_sgd/blob/master/real_data/mnist/mnist_softmax.py)
+real data: [MNIST softmax](https://github.com/GUG11/parallel_sgd/blob/master/python_code/real_data/mnist/mnist_softmax.py)
