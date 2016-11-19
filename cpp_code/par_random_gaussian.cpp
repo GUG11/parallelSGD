@@ -2,6 +2,7 @@
 
 #include "sgd.h"
 #include "data_part.h"
+#include "io.h"
 #include <cstdlib>
 
 int main(int argc, char* argv[]) {
@@ -26,6 +27,7 @@ int main(int argc, char* argv[]) {
     parallelSGD(learners, X, y, dataPartition, sgdProfiles, learningRate, numIters, logsettings);
 
     printf("Finally loss: %f\n", learners[0]->computeLoss(X, y));
+    for (int i = 0; i < num_threads; i++) writeSGDProfile("../results/simulations/Gaussian/random_parallel", "thread_" + std::to_string(i), sgdProfiles[i]);
     for (auto& learner: learners) delete learner;
     return 0;
 }

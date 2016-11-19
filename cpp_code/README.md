@@ -10,4 +10,5 @@ Huayu Zhang, UW-Madison
 
 ### Demos
 simulation Least square on Guassian matrixes. Run
-<code> python run.py ./par\_random\_gaussian </code>
+<code> python run.py ./par\_random\_gaussian </code>.
+Check the log files in results/simulations/Gaussian/random\_parallel.

@@ -1,8 +1,12 @@
 CC=g++
-CFLAGS=-c -Wall -std=c++11 -O2
-#CFLAGS=-c -Wall -g -std=c++11 
+MODE=release
+ifeq ($(MODE), release)
+	CFLAGS=-c -Wall -std=c++11 -O2
+else
+	CFLAGS=-c -Wall -g -std=c++11 
+endif
 LIBS=-larmadillo -lpthread
-SRC0=loss_function.cpp sgd.cpp data_part.cpp
+SRC0=loss_function.cpp sgd.cpp data_part.cpp io.cpp
 SRC1=$(SRC0) ser_gaussian.cpp 
 SRC2=$(SRC0) par_random_gaussian.cpp 
 
