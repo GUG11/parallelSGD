@@ -21,6 +21,10 @@ arma::mat Learner::getWeight() const {
     return w;
 }
 
+void Learner::setWeight(const arma::mat& w) {
+    this->w = w;
+}
+
 void Learner::update(const arma::mat& X, const arma::mat& y, double learningRate) {
     arma::mat grad = computeGrad(X, y);
     w -= learningRate * grad;
