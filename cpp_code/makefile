@@ -9,19 +9,32 @@ LIBS=-larmadillo -lpthread
 SRC0=loss_function.cpp sgd.cpp data_part.cpp io.cpp
 SRC1=$(SRC0) ser_gaussian.cpp 
 SRC2=$(SRC0) par_random_gaussian.cpp 
+SRC3=$(SRC0) eval_part.cpp
+SRC4=$(SRC0) par_minibatch_gaussian.cpp
 
 OBJ1=$(SRC1:.cpp=.o)
 OBJ2=$(SRC2:.cpp=.o)
+OBJ3=$(SRC3:.cpp=.o)
+OBJ4=$(SRC4:.cpp=.o)
 EXE1=ser_gaussian 
 EXE2=par_random_gaussian
+EXE3=eval_part
+EXE4=par_minibatch_gaussian
 
-all: $(EXE1) $(EXE2)
+all: $(EXE1) $(EXE2) $(EXE3) $(EXE4)
 
 $(EXE1): $(OBJ1)
 	$(CC) $(OBJ1) -o $@ $(LIBS)
 
 $(EXE2): $(OBJ2)
 	$(CC) $(OBJ2) -o $@ $(LIBS)
+
+$(EXE3): $(OBJ3)
+	$(CC) $(OBJ3) -o $@ $(LIBS)
+
+$(EXE4): $(OBJ4)
+	$(CC) $(OBJ4) -o $@ $(LIBS)
+
 
 .cpp.o:
 	$(CC) $(CFLAGS) $< -o $@ $(LIBS)

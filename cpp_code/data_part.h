@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 #include <unordered_map>
 #include <armadillo>
@@ -7,6 +9,15 @@
 struct Correlation {
     arma::mat corr;
     arma::mat ncc;   // cross correlation
+};
+
+struct PartMetrics {
+    arma::mat weights;
+    arma::imat numEdges;
+    arma::mat aveWeights;
+
+    PartMetrics(const arma::mat& edgeMat, const std::vector<std::vector<int>>& dataPartition);    
+    void printMetrics();
 };
 
 void xcorr(const arma::mat& X, const arma::mat& Y, Correlation& correlation);   // X (d x n); Y (d x m)
@@ -25,7 +36,6 @@ public:
 };
 
 
-
 class BalancedMinCutParition : public Partition {
 protected: 
     int k;
@@ -33,7 +43,6 @@ protected:
     int numLeft;
     std::vector<bool> added;
     std::vector<std::vector<double>> diff;
-    std::vector<std::vector<double>> N;
     std::vector<std::pair<double, int>> minvals;
 
     void update(const arma::mat& edgeMat, int v, int addSet);

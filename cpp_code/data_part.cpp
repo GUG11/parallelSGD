@@ -12,6 +12,32 @@ void xcorr(const arma::mat& X, const arma::mat& Y, Correlation& correlation) { /
     correlation.ncc = correlation.corr / xyNorm;
 }
 
+PartMetrics::PartMetrics(const arma::mat& edgeMat, const std::vector<std::vector<int>>& dataPartition) {
+        int k = dataPartition.size();
+        weights.zeros(k, k);
+        numEdges.zeros(k, k);
+        aveWeights.zeros(k, k);
+        for (int i = 0; i < k; i++) {
+            for (int j = 0; j < k; j++) {
+                // edges between group i and j
+                for (auto& u : dataPartition[i]) {
+                    for (auto& v : dataPartition[j]) {
+                        if (i == j && u <= v) continue;  // remove duplicates
+                        weights.at(i, j) += edgeMat.at(u, v);
+                        numEdges.at(i, j)++;
+                    }
+                }
+                aveWeights.at(i, j) = weights.at(i, j) / numEdges.at(i, j);
+            }
+        }
+    }
+
+void PartMetrics::printMetrics() {
+    weights.print("Weight Sum\n");
+    numEdges.print("Num edges\n");
+    aveWeights.print("Average weight\n");
+}
+
 void RandomPartition::partition(const arma::mat& edgeMat, int P, std::vector<std::vector<int>>& dataPartition) {
     assert(edgeMat.n_rows==edgeMat.n_cols);
     partition(edgeMat.n_rows, P, dataPartition);
@@ -38,10 +64,7 @@ void BalancedMinCutParition::update(const arma::mat& edgeMat, int v, int addSet)
     for (int p = 0; p < k; p++) {
         for (int i = 0; i < n; i++) {
             if (!added[i]) {
-                if (p == addSet) { 
-                    diff[p][i] -= edgeMat.at(i, v);
-                    N[p][i] += edgeMat.at(i, v);
-                }
+                if (p == addSet)  diff[p][i] -= edgeMat.at(i, v);
                 else diff[p][i] += edgeMat.at(i, v);
             }
         }
@@ -65,7 +88,7 @@ int BalancedMinCutParition::chooseAddSet(const std::vector<std::vector<int>>& da
     int addSet = -1;
     double mminval = 0;
     for (int p = 0; p < k; p++) {
-        if (int(dataPartition[p].size()) * k < totalSize && (addSet < 0 || minvals[p].first < mminval)) {
+        if (int(dataPartition[p].size()) * k <= totalSize && (addSet < 0 || minvals[p].first < mminval)) {
             addSet = p;
             mminval = minvals[p].first;
         }
@@ -80,15 +103,12 @@ void BalancedMinCutParition::partition(const arma::mat& edgeMat, int P, std::vec
     k = P;
     added.assign(n, false);
     diff.assign(P, std::vector<double>(n, 0));
-    N.assign(P, std::vector<double>(n, 0));
     minvals.resize(P);
-    dataPartition.assign(P, {});   
-        // set seeds
-    for (int i = 0; i < P; i++) {
-        update(edgeMat, i, i);
-        dataPartition[i].push_back(i);
-    }
-    numLeft -= P;
+    dataPartition.assign(P, {});
+    // set seeds
+    update(edgeMat, 0, 0);
+    dataPartition[0].push_back(0);
+    numLeft -= 1;
     // greedy add
     while (numLeft > 0) {
         computeMinVal();
