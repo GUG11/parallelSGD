@@ -52,6 +52,7 @@ void parallelSGD(std::vector<Learner*>& learners, const arma::mat& X, const arma
     // aggregate the results
     for (auto& learner: learners) w += learner->getWeight();
     w /= numThreads;
+    if (!w.is_finite()) throw std::runtime_error("Divergency: model parameters has nan or inf.\n");
     for (auto& learner: learners) learner->setWeight(w);
 }
 
@@ -92,6 +93,7 @@ void parallelMinibatchSGD(std::vector<Learner*>& learners, const arma::mat& X, c
         tEnd = std::clock();
         sgdProfile.times.push_back(double(tEnd - tStart) / CLOCKS_PER_SEC);
         sgdProfile.objs.push_back(learners[0]->computeLoss(X, y));
+        if (sgdProfile.objs.back() > 10.0 * sgdProfile.objs[0]) throw std::runtime_error("Divergency: loss function is more than 10 times of the initial.\n");
         printf("Epoch: %d, obj= %f, time= %f\n", t, sgdProfile.objs[t], sgdProfile.times[t]);
     }
 }

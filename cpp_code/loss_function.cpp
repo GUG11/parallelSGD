@@ -1,5 +1,6 @@
 #include "loss_function.h"
 #include <cmath>
+#include <stdexcept>
 
 const double eps = 1e-20;
 
@@ -28,6 +29,7 @@ void Learner::setWeight(const arma::mat& w) {
 void Learner::update(const arma::mat& X, const arma::mat& y, double learningRate) {
     arma::mat grad = computeGrad(X, y);
     w -= learningRate * grad;
+    // if (!w.is_finite()) throw std::runtime_error("Divergency: model parameters has nan or inf.\n");
 }
 
 LeastSquare::LeastSquare(const arma::mat& w0) : Learner(w0) {
