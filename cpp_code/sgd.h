@@ -3,6 +3,7 @@
 #include <vector>
 #include <armadillo>    // column-major (d x N)
 #include "loss_function.h"
+#include "data_part.h"
 
 struct SGDProfile {  // tracking SGD time and objective function
     int T;      // record objective function every T epoches
@@ -28,3 +29,5 @@ void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProf
  * learners
  * */
 void parallelSGD(std::vector<Learner*>& learners, const arma::mat& X, const arma::mat& y, const std::vector<std::vector<int>>& dataPartition, std::vector<SGDProfile>& sgdProfile, double learningRate=0.1, int numIters=10000, const LogSettings& logsettings=LogSettings());
+
+void parallelMinibatchSGD(std::vector<Learner*>& learners, const arma::mat& X, const arma::mat& y, Partition& partitionMethod, std::vector<SGDProfile>& sgdProfile, double learningRate=0.1, int numIters=10000, const LogSettings& logsettings=LogSettings());

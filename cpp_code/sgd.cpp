@@ -52,3 +52,6 @@ void parallelSGD(std::vector<Learner*>& learners, const arma::mat& X, const arma
     w /= numThreads;
     for (auto& learner: learners) learner->setWeight(w);
 }
+
+void parallelMinibatchSGD(std::vector<Learner*>& learners, const arma::mat& X, const arma::mat& y, Partition& partitionMethod, std::vector<SGDProfile>& sgdProfile, double learningRate, int numIters, const LogSettings& logsettings) {
+}

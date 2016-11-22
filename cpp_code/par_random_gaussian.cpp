@@ -19,11 +19,12 @@ int main(int argc, char* argv[]) {
     arma::mat y = w * X;
     std::vector<SGDProfile> sgdProfiles(num_threads);
     std::vector<Learner*> learners(num_threads);
+    RandomPartition rpart;
     for (int i = 0; i < num_threads; i++)
         learners[i] = new LeastSquare(arma::mat(1, d, arma::fill::zeros));
     std::vector<std::vector<int>> dataPartition;
     
-    randomPartition(n, num_threads, dataPartition);
+    rpart.partition(n, num_threads, dataPartition);
     parallelSGD(learners, X, y, dataPartition, sgdProfiles, learningRate, numIters, logsettings);
 
     printf("Finally loss: %f\n", learners[0]->computeLoss(X, y));
