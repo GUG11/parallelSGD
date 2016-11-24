@@ -24,7 +24,7 @@ struct LogSettings {
  * sgdProfile: output
  * return
  * */
-void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProfile& sgdProfile, double learningRate=0.1, int numIters=10000, const LogSettings& logsettings=LogSettings(), std::vector<int> S={});
+void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProfile* sgdProfile, double learningRate=0.1, int numIters=10000, const LogSettings& logsettings=LogSettings(), std::vector<int> S={});
 
 /**
  * dataPartition: size = number of threads

@@ -12,7 +12,7 @@
 
 std::atomic_int next_tid(0);
 
-void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProfile& sgdProfile, double learningRate, int numIters, const LogSettings& logsettings, std::vector<int> S) {
+void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProfile* sgdProfile, double learningRate, int numIters, const LogSettings& logsettings, std::vector<int> S) {
     int n = 0, d = X.n_rows, st = 0;
     int id = next_tid++;
     double elapsedTime = 0, curLoss = 0;
@@ -22,7 +22,7 @@ void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProf
         for (int i = 0; i < int(X.n_cols); i++) S[i] = i;
     }
     n = S.size();
-    sgdProfile.T = logsettings.log_period;
+    sgdProfile->T = logsettings.log_period;
     std::printf("Serial SGD: size (%d, %d), num of iterations:%d\n", n, d, numIters);
     // starting SGD
     for (int t = 0; t < numIters; t++) {
@@ -32,19 +32,19 @@ void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProf
         tEnd = std::clock();
         // record the runtime and loss function
         elapsedTime = double(tEnd - tStart) / CLOCKS_PER_SEC;
-        if (t > 0 && t % sgdProfile.T == 0) 
+        if ((t + 1) % sgdProfile->T == 0) 
             curLoss = learner->computeLoss(X, y);
         // critical area
-        sgdProfile.profile_lock.lock();
-        sgdProfile.times.push_back(elapsedTime);
-        if (t > 0 && t % sgdProfile.T == 0) sgdProfile.objs.push_back(curLoss);
-        if (!sgdProfile.objs.empty() && sgdProfile.objs.back() > 10.0 * sgdProfile.objs[0]) throw std::runtime_error("Divergency: loss function is more than 10 times of the initial.\n");
-        sgdProfile.profile_lock.unlock();
+        sgdProfile->profile_lock.lock();
+        sgdProfile->times.push_back(elapsedTime);
+        if ((t + 1) % sgdProfile->T == 0) sgdProfile->objs.push_back(curLoss);
+        if (!sgdProfile->objs.empty() && sgdProfile->objs.back() > 10.0 * sgdProfile->objs[0]) throw std::runtime_error("Divergency: loss function is more than 10 times of the initial.\n");
         // print 
-        if (t > 0 && t % logsettings.print_period == 0) 
+        if ((t + 1) % logsettings.print_period == 0) 
             printf("Tid: %d, epoch: %d, data index: %d, obj= %f, time= %f\n", \
-                id, t, st, sgdProfile.objs[t / sgdProfile.T - 1], 
-                std::accumulate(sgdProfile.times.begin() + t - logsettings.print_period, sgdProfile.times.begin() + t, 0.0));
+                id, t + 1, st, sgdProfile->objs[t / sgdProfile->T], 
+                std::accumulate(sgdProfile->times.begin() + t - logsettings.print_period, sgdProfile->times.begin() + t, 0.0));
+        sgdProfile->profile_lock.unlock();
     }
     printf("Thread %d finished.\n", id);
 }
@@ -55,7 +55,7 @@ void parallelSGD(std::vector<Learner*>& learners, const arma::mat& X, const arma
     std::printf("Parallel SGD: size (%d, %d), threads:%d\n", n, d, numThreads);
     std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; i++) {
-        threads.push_back(std::thread(serialSGD, learners[i], std::ref(X), std::ref(y), std::ref(sgdProfile[i]), learningRate, numIters / numThreads, std::ref(logsettings), dataPartition[i]));
+        threads.push_back(std::thread(serialSGD, learners[i], std::ref(X), std::ref(y), &sgdProfile[i], learningRate, numIters / numThreads, std::ref(logsettings), dataPartition[i]));
     }
     printf("Synchronizing all threads...\n");
     for (auto& th: threads) th.join();
@@ -113,12 +113,14 @@ void hogwild(Learner* learner, const arma::mat& X, const arma::mat& y, Partition
     std::vector<std::vector<int>> dataPartition;
     Correlation corr;
     int n = X.n_cols, d = X.n_rows;
+    printf("Compute correlation matrix.\n");
+    xcorr(X, X, corr);
     printf("Parition\n");
     partitionMethod.partition(arma::abs(corr.ncc), numThreads, dataPartition);
     std::printf("Hogwild: size (%d, %d), threads:%d\n", n, d, numThreads);
     std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; i++) {
-        threads.push_back(std::thread(serialSGD, learner, std::ref(X), std::ref(y), std::ref(sgdProfile), learningRate, numIters / numThreads, std::ref(logsettings), dataPartition[i]));
+        threads.push_back(std::thread(serialSGD, learner, std::ref(X), std::ref(y), &sgdProfile, learningRate, numIters / numThreads, std::ref(logsettings), dataPartition[i]));
     }
     printf("Synchronizing all threads...\n");
     for (auto& th: threads) th.join();

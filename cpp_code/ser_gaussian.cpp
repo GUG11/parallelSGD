@@ -15,6 +15,6 @@ int main(int argc, char* argv[]) {
     arma::mat y = w * X;
     SGDProfile sgdProfile;
     LeastSquare learner(arma::mat(1, d, arma::fill::zeros));
-    serialSGD(&learner, X, y, sgdProfile, learningRate, numIters);
+    serialSGD(&learner, X, y, &sgdProfile, learningRate, numIters);
     return 0;
 }

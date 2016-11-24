@@ -18,9 +18,9 @@ bool writeSGDProfile(const std::string& filedir, const std::string& filename, co
         ofs << "Period: " << sgdProfile.T << std::endl;
         ofs << std::setw(WIDTH) << "Epoch"  << std::setw(WIDTH) << "Time cost" << std::setw(WIDTH) << "Loss" << std::endl;  
         for (int i = 0; i < n; i++) {
-            if (i % sgdProfile.T == 0) {
+            if ((i + 1) % sgdProfile.T == 0) {
                 timeCost = std::accumulate(sgdProfile.times.begin() + i - sgdProfile.T, sgdProfile.times.begin() + i, 0.0);
-                ofs << std::setw(WIDTH) << i << std::setw(WIDTH) << timeCost << std::setw(WIDTH) << sgdProfile.objs[i / sgdProfile.T] << std::endl;
+                ofs << std::setw(WIDTH) << i + 1 << std::setw(WIDTH) << timeCost << std::setw(WIDTH) << sgdProfile.objs[i / sgdProfile.T] << std::endl;
             }
         }
     } else throw std::runtime_error("File open failure.\n");
