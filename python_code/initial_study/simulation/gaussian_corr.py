@@ -10,6 +10,7 @@ if __name__ == '__main__':
     X = np.random.randn(n, d)
     cc, ncc = utils.xcorr(X)
     # c_sort = np.sort(np.abs(cc.ravel()))
+    cc_rm_diag = np.extract(1 - np.eye(n), cc)
     ncc_rm_diag = np.extract(1 - np.eye(n), ncc)
 
     fig = plt.figure(num=1, figsize=(20, 12))
@@ -17,9 +18,17 @@ if __name__ == '__main__':
     utils.plot_hist(ncc_rm_diag, ax, 300, xlim=[-1, 1],
                     xlabel='correlation', title='Normalized Gaussian')
     plt.tight_layout()
-    save_dir=os.path.join('results', 'simulations', 'Gaussian',
+    save_dir=os.path.join('..','results', 'simulations', 'Gaussian',
                           'n%d_d%d.pdf' % (n, d))
     fig.savefig(save_dir)
+    plt.cla()
+    utils.plot_hist(cc_rm_diag, ax, 300, xlim=[-d,d],
+                    xlabel='correlation', title='Gaussian')
+    plt.tight_layout()
+    save_dir=os.path.join('..','results', 'simulations', 'Gaussian',
+                          'unn_n%d_d%d.pdf' % (n, d))
+    fig.savefig(save_dir)
+
     # plot correlations
     #plt.plot(c_sort, lw=2)
     #plt.show()

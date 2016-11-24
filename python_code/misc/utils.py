@@ -30,11 +30,11 @@ def plot_hist(x, ax, num_bins=200, xlim=[0, 1], xlabel='data', title='title'):
         normed=1, facecolor='green', alpha=0.75)
 
     # add a 'best fit' line
-    set_axis(ax, xlabel, 'frequency', title, xticks=[np.min(x), np.max(x)], 
+    set_axis(ax, xlabel, 'frequency', title, xticks=[np.min(x), np.max(x)],
         yticks=[0, np.max(n)], xlim=xlim, fontsize=30)
 
 
-def set_axis(ax, xlabel=None, ylabel=None, title=None, 
+def set_axis(ax, xlabel=None, ylabel=None, title=None,
         xticks=None, yticks=None, xlim=None, fontsize=30):
     """
     set the outlook of an axis

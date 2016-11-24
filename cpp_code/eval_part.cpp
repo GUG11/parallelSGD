@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
     printf("Compute correlation\n");
     xcorr(X, X, corr);   
     printf("Partition\n");
-    arma::mat edgeMat = arma::abs(corr.ncc);
+    arma::mat edgeMat = arma::abs(corr.corr);
     rPart.partition(edgeMat, k, dataPartition_r);
     bmcPart.partition(edgeMat, k, dataPartition_c);  
     PartMetrics pmetrics_c(edgeMat, dataPartition_c), pmetrics_r(edgeMat, dataPartition_r);
