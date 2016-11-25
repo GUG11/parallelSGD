@@ -8,6 +8,7 @@ arma::mat softmax(const arma::mat& z);
 arma::mat oneHotEncode(const arma::mat& y, int c);
 arma::mat oneHotDecode(const arma::mat& OHX);
 
+
 class Learner {
 protected: arma::mat w;
     std::string type;   // regressor, classifier
