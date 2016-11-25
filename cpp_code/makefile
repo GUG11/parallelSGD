@@ -13,18 +13,22 @@ SRC3=$(SRC0) eval_part.cpp
 SRC4=$(SRC0) par_minibatch_gaussian.cpp
 SRC5=$(SRC0) hogwild_gaussian.cpp
 
+SRC6=$(SRC0) ser_mnist.cpp
+
 OBJ1=$(SRC1:.cpp=.o)
 OBJ2=$(SRC2:.cpp=.o)
 OBJ3=$(SRC3:.cpp=.o)
 OBJ4=$(SRC4:.cpp=.o)
 OBJ5=$(SRC5:.cpp=.o)
+OBJ6=$(SRC6:.cpp=.o)
 EXE1=ser_gaussian 
 EXE2=par_random_gaussian
 EXE3=eval_part
 EXE4=par_minibatch_gaussian
 EXE5=hogwild_gaussian
+EXE6=ser_mnist
 
-all: $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5)
+all: $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6)
 
 $(EXE1): $(OBJ1)
 	$(CC) $(OBJ1) -o $@ $(LIBS)
@@ -40,6 +44,9 @@ $(EXE4): $(OBJ4)
 
 $(EXE5): $(OBJ5)
 	$(CC) $(OBJ5) -o $@ $(LIBS)
+
+$(EXE6): $(OBJ6)
+	$(CC) $(OBJ6) -o $@ $(LIBS)
 
 .cpp.o:
 	$(CC) $(CFLAGS) $< -o $@ $(LIBS)

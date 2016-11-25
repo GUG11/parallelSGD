@@ -51,7 +51,7 @@ if __name__ == '__main__':
                             y = np.log(np.array(losses))
                             ax.plot(x, y, label=scheme, lw=2)
 
-                    utils.set_axis(ax, xlabel='iterations', ylabel=None, title='log(loss)', xticks=None, yticks=None, xlim=None, fontsize=30)
+                    utils.set_axis(ax, xlabel='iterations', ylabel='log(loss)', xticks=None, yticks=None, xlim=None, fontsize=30)
                     plt.tight_layout()
                     savefile = 'n%d_d%d_B%d_T%d_ths%d.svg' % (n, d, B, nit, P)
                     save_dir = os.path.join(filedir, savefile)

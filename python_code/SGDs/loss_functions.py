@@ -183,7 +183,7 @@ class Softmax(Learner):
         :param oneHot: whether do one-hot encoding
         :return: grad (W size)
         """
-        y_mat = oneHotELogisticncode(y) if self._oneHot else y
+        y_mat = oneHotEncode(y) if self._oneHot else y
         prob = self.compute_prob(X, w)
         grad = (np.dot((prob - y_mat).T, X) if np.ndim(X) > 1
                  else np.outer(prob - y_mat, X))

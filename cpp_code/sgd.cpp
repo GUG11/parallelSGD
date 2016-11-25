@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
 #include <algorithm>
 #include <functional>
 #include <unistd.h>
@@ -11,6 +12,7 @@
 #include <atomic>
 
 std::atomic_int next_tid(0);
+std::atomic_bool diverge(false);
 
 void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProfile* sgdProfile, double learningRate, int numIters, const LogSettings& logsettings, std::vector<int> S) {
     int n = 0, d = X.n_rows, st = 0;
@@ -26,6 +28,10 @@ void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProf
     std::printf("Serial SGD: size (%d, %d), num of iterations:%d\n", n, d, numIters);
     // starting SGD
     for (int t = 0; t < numIters; t++) {
+        if (diverge) {
+            printf("Tid: %d terminates due to divergence!\n", id);
+            break;
+        }
         tStart = std::clock();
         st = S[rand() % n];
         learner->update(X.col(st), y.col(st), learningRate);
@@ -38,13 +44,20 @@ void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProf
         sgdProfile->profile_lock.lock();
         sgdProfile->times.push_back(elapsedTime);
         if ((t + 1) % sgdProfile->T == 0) sgdProfile->objs.push_back(curLoss);
-        if (!sgdProfile->objs.empty() && sgdProfile->objs.back() > 10.0 * sgdProfile->objs[0]) throw std::runtime_error("Divergency: loss function is more than 10 times of the initial.\n");
+        sgdProfile->profile_lock.unlock();
+        // check divergence
+        if (!sgdProfile->objs.empty() && sgdProfile->objs.back() > 1.1 * sgdProfile->objs[0]) {
+            diverge = true;
+            printf("Tid %d: Divergence, loss is more than 1.1 times of the initial!\n", id);
+        } else if (!sgdProfile->objs.empty() && std::isnan(sgdProfile->objs.back())) {
+            diverge = true;
+            printf("Tid %d: Divergence, NAN exists in the loss function!\n", id);
+        }
         // print 
         if ((t + 1) % logsettings.print_period == 0) 
             printf("Tid: %d, epoch: %d, data index: %d, obj= %f, time= %f\n", \
                 id, t + 1, st, sgdProfile->objs[t / sgdProfile->T], 
                 std::accumulate(sgdProfile->times.begin() + t - logsettings.print_period, sgdProfile->times.begin() + t, 0.0));
-        sgdProfile->profile_lock.unlock();
     }
     printf("Thread %d finished.\n", id);
 }
@@ -62,7 +75,10 @@ void parallelSGD(std::vector<Learner*>& learners, const arma::mat& X, const arma
     // aggregate the results
     for (auto& learner: learners) w += learner->getWeight();
     w /= numThreads;
-    if (!w.is_finite()) throw std::runtime_error("Divergency: model parameters has nan or inf.\n");
+    if (diverge) {
+        diverge = false;
+        throw std::runtime_error("Divergence from some workers.\n");
+    }
     for (auto& learner: learners) learner->setWeight(w);
 }
 
@@ -103,7 +119,7 @@ void parallelMinibatchSGD(std::vector<Learner*>& learners, const arma::mat& X, c
         tEnd = std::clock();
         sgdProfile.times.push_back(double(tEnd - tStart) / CLOCKS_PER_SEC);
         sgdProfile.objs.push_back(learners[0]->computeLoss(X, y));
-        if (sgdProfile.objs.back() > 10.0 * sgdProfile.objs[0]) throw std::runtime_error("Divergency: loss function is more than 10 times of the initial.\n");
+        //if (sgdProfile.objs.back() > 10.0 * sgdProfile.objs[0]) throw std::runtime_error("Divergence: loss function is more than 10 times of the initial.\n");
         printf("Epoch: %d, obj= %f, time= %f\n", t, sgdProfile.objs[t], sgdProfile.times[t]);
     }
 }
@@ -124,4 +140,8 @@ void hogwild(Learner* learner, const arma::mat& X, const arma::mat& y, Partition
     }
     printf("Synchronizing all threads...\n");
     for (auto& th: threads) th.join();
+    if (diverge) {
+        diverge = false;
+        throw std::runtime_error("Divergence from some workers.\n");
+    }
 }
