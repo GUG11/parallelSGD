@@ -2,7 +2,7 @@ import numpy as np
 from misc import utils
 import matplotlib.pyplot as plt
 import matplotlib
-import os
+import os, re
 import glob
 
 def parseData(contents):
@@ -46,14 +46,22 @@ if __name__ == '__main__':
                         with open(filepathc[0], 'r') as ins:
                             print('reading %s' % filepathc[0])
                             contents = ins.read()
-                            epoches, times, losses = parseData(contents)
-                            x = np.array(epoches)
-                            y = np.log(np.array(losses))
-                            ax.plot(x, y, label=scheme, lw=2)
+                        match = re.match(r'(.*)_gamma(.*)_(.*)', filepathc[0], re.M | re.I)
+                        gamma = match.group(2)
+                        epoches, times, losses = parseData(contents)
+                        x = np.array(epoches)
+                        y = np.log(np.array(losses))
+                        ax.plot(x, y, label='%s: step=%s' % (scheme, gamma), lw=2)
 
                     utils.set_axis(ax, xlabel='iterations', ylabel='log(loss)', xticks=None, yticks=None, xlim=None, fontsize=30)
                     plt.tight_layout()
                     savefile = 'n%d_d%d_B%d_T%d_ths%d.svg' % (n, d, B, nit, P)
+                    save_dir = os.path.join(filedir, savefile)
+                    fig.savefig(save_dir)
+                    savefile = 'n%d_d%d_B%d_T%d_ths%d.pdf' % (n, d, B, nit, P)
+                    save_dir = os.path.join(filedir, savefile)
+                    fig.savefig(save_dir)
+                    savefile = 'n%d_d%d_B%d_T%d_ths%d.jpg' % (n, d, B, nit, P)
                     save_dir = os.path.join(filedir, savefile)
                     fig.savefig(save_dir)
                     plt.cla()

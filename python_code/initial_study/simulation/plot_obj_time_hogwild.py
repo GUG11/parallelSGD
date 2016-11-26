@@ -58,5 +58,8 @@ if __name__ == '__main__':
                 savefile = 'n%d_d%d_T%d_ths%d.pdf' % (n, d, nit, P)
                 save_dir = os.path.join(filedir, savefile)
                 fig.savefig(save_dir)
+                savefile = 'n%d_d%d_T%d_ths%d.jpg' % (n, d, nit, P)
+                save_dir = os.path.join(filedir, savefile)
+                fig.savefig(save_dir)
                 plt.cla()
                 print('succeed saving %s' % save_dir)
