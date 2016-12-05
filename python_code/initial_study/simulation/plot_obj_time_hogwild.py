@@ -27,7 +27,7 @@ if __name__ == '__main__':
     Ps = [2, 4, 8]
     schemes = ['random', 'corr']
     nit = 100000
-    filedir = os.path.join('..','results','simulations', 'Gaussian', 'hogwild')
+    filedir = os.path.join('..', 'results','simulations', 'Gaussian', 'hogwild')
     for n in ns:
         for d in ds:
             for P in Ps:
@@ -40,15 +40,22 @@ if __name__ == '__main__':
                     filepathc = glob.glob(filepath)
                     if len(filepathc) == 0:
                         raise Exception("File %s does not exist\n" % filepath)
-                    with open(filepathc[0], 'r') as ins:
-                        print('reading %s' % filepathc[0])
-                        contents = ins.read()
-                    match = re.match(r'(.*)_gamma(.*)_(.*)', filepathc[0], re.M | re.I)
-                    gamma = match.group(2)
-                    epoches, times, losses = parseData(contents)
-                    x = np.array(epoches)
-                    y = np.log(np.array(losses))
-                    ax.plot(x, y, label='%s: step=%s' % (scheme, gamma), lw=2)
+                    gammas, ys = [], []
+                    for filepath in filepathc:
+                        with open(filepath, 'r') as ins:
+                            print('reading %s' % filepathc[0])
+                            contents = ins.read()
+                        match = re.match(r'(.*)_gamma(.*)_(.*)', filepath, re.M | re.I)
+                        gamma = match.group(2)
+                        gammas.append(gamma)
+                        epoches, times, losses = parseData(contents)
+                        x = np.array(epoches)
+                        y = np.log(np.array(losses))
+                        ys.append(y)
+                    ys = np.array(ys)
+                    yssum = np.sum(ys, axis=1)
+                    opt = np.argmin(yssum)
+                    ax.plot(x, ys[opt], label='%s: step=%s' % (scheme, gammas[opt]), lw=2)
 
                 utils.set_axis(ax, xlabel='iterations', ylabel='log(loss)', xticks=None, yticks=None, xlim=None, fontsize=30)
                 plt.tight_layout()
