@@ -6,7 +6,7 @@ else
 	CFLAGS=-c -Wall -g -std=c++11 
 endif
 LIBS=-larmadillo -lpthread
-SRC0=loss_function.cpp sgd.cpp data_part.cpp io.cpp metrics.cpp
+SRC0=loss_function.cpp sgd.cpp data_part.cpp io.cpp metrics.cpp simu_data.cpp
 SRC1=$(SRC0) ser_gaussian.cpp 
 SRC2=$(SRC0) par_random_gaussian.cpp 
 SRC3=$(SRC0) eval_part.cpp

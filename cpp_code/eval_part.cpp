@@ -3,15 +3,16 @@
 #include "io.h"
 #include <string>
 #include <cstdlib>
-
+#include "simu_data.h"
 
 int main(int argc, char* argv[]) {
-    if (argc != 4) {
-        std::fprintf(stderr, "Usage: eval_part [n] [d] [k]\n"); 
+    if (argc != 5) {
+        std::fprintf(stderr, "Usage: eval_part [n] [d] [k] [s]\n"); 
         exit(EXIT_FAILURE);
     }
     int n = atoi(argv[1]), d = atoi(argv[2]), k = atoi(argv[3]);
-    arma::mat X(d, n, arma::fill::randn);
+    double sparse_rate = atof(argv[4]);
+    arma::mat X = generateGaussian(n, d, k, sparse_rate);
     BalancedMinCutParition bmcPart;
     Correlation corr;
     RandomPartition rPart;
@@ -29,7 +30,7 @@ int main(int argc, char* argv[]) {
     pmetrics_r.printMetrics();
     // save results
     std::string fileDir = "../results/simulations/Gaussian/partitions";
-    std::string filePattern = "_n" + std::to_string(n) + "_d" + std::to_string(d) + "_k" + std::to_string(k) + ".csv";
+    std::string filePattern = "_n" + std::to_string(n) + "_d" + std::to_string(d) + "_k" + std::to_string(k) + "_s" + std::to_string(sparse_rate) + ".csv";
     std::string fileName1 = "random" + filePattern;
     std::string fileName2 = "corr" + filePattern;
     pmetrics_r.aveWeights.save(fileDir + '/' + fileName1, arma::arma_ascii);

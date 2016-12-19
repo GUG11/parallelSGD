@@ -7,10 +7,11 @@
 #include "metrics.h"
 
 int main(int argc, char* argv[]) {
-    if (argc != 9) {
-        std::fprintf(stderr, "Usage: [hogwild_mnist mnist_dir] [n] [num_threads] [learningRate] [num_iters] [print_period] [log_period] [partition_method]\n"); 
+    if (argc < 9) {
+        std::fprintf(stderr, "Usage: [hogwild_mnist mnist_dir] [n] [num_threads] [learningRate] [num_iters] [print_period] [log_period] [partition_method] [save(opt)]\n"); 
         exit(EXIT_FAILURE);
     }
+    srand(0);   // fix the random seed
     std::string filedir = argv[1];
     std::string filenameTrainingImages = "train-images-idx3-ubyte";
     std::string filenameTrainingLabels = "train-labels-idx1-ubyte";
@@ -27,6 +28,7 @@ int main(int argc, char* argv[]) {
     double learningRate=atof(argv[4]);
     LogSettings logsettings(atoi(argv[6]), atoi(argv[7]));
     std::string partMethod = argv[8];
+    bool save = 9 < argc;
     images = trainingImages.cols(0, n-1);
     labels = trainingLabels.cols(0, n-1);
     SGDProfile sgdProfile;
@@ -46,11 +48,13 @@ int main(int argc, char* argv[]) {
         std::cout << "Catch exception " << e.what();
         exit(EXIT_FAILURE);
     }
-    try {
-        writeSGDProfile("../results/real_data/MNIST/hogwild", partMethod + "_n" + std::to_string(n) + "_T" + std::to_string(numIters) + "_gamma" + std::to_string(learningRate) + "_ths" + std::to_string(num_threads), sgdProfile);
-    } catch (std::exception& e) {
-        std::cout << "Catch exception " << e.what();
-        exit(EXIT_FAILURE);
+    if (save) {
+        try {
+            writeSGDProfile("../results/real_data/MNIST/hogwild", partMethod + "_n" + std::to_string(n) + "_T" + std::to_string(numIters) + "_ths" + std::to_string(num_threads) + "_gamma" + std::to_string(learningRate), sgdProfile);
+        } catch (std::exception& e) {
+            std::cout << "Catch exception " << e.what();
+            exit(EXIT_FAILURE);
+        }
     }
     exit(EXIT_SUCCESS);
     return 0;

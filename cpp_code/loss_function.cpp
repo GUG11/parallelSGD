@@ -121,11 +121,10 @@ arma::mat Softmax::computeProbability(const arma::mat& X) {  // d x n
 double Softmax::computeLoss(const arma::mat& X, const arma::mat& y) {
     arma::mat OHX = oneHotEncode(y, w.n_rows);      // c x n
     arma::mat prob = computeProbability(X);  // c x n
-    arma::mat entropy(w.n_rows, X.n_cols); 
     double loss = 0, entropy0 = 0;
-    for (int i = 0; i < int(entropy.n_elem); i++) {
+    for (int i = 0; i < int(OHX.n_elem); i++) {
         entropy0 = OHX[i] * std::log(prob[i]);
-        if (std::isnan(entropy0) || std::isinf(entropy0)) continue;
+        // if (std::isnan(entropy0) || std::isinf(entropy0)) continue;
         loss -= entropy0; 
     }
     return loss;

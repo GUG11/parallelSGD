@@ -6,6 +6,7 @@
 #include "data_part.h"
 #include <mutex>
 
+
 struct SGDProfile {  // tracking SGD time and objective function
     int T;      // record objective function every T epoches
     std::vector<double> objs;   // objective functions

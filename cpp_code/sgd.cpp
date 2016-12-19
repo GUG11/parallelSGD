@@ -1,24 +1,24 @@
 #include "sgd.h"
 #include <cstdio>
 #include <cstdlib>
-#include <ctime>
 #include <cmath>
+#include <chrono>
 #include <algorithm>
 #include <functional>
-#include <unistd.h>
 #include <thread>
-#include <sys/types.h>
 #include <stdexcept>
 #include <atomic>
 
 std::atomic_int next_tid(0);
 std::atomic_bool diverge(false);
+std::atomic_int global_t(0);
 
 void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProfile* sgdProfile, double learningRate, int numIters, const LogSettings& logsettings, std::vector<int> S) {
     int n = 0, d = X.n_rows, st = 0;
     int id = next_tid++;
-    double elapsedTime = 0, curLoss = 0;
-    std::clock_t tStart, tEnd;
+    double curLoss = 0;
+    std::chrono::time_point<std::chrono::high_resolution_clock> tStart, tEnd;
+    std::chrono::duration<double> elapsedTime;
     if (S.empty()) {
         S.resize(X.n_cols);
         for (int i = 0; i < int(X.n_cols); i++) S[i] = i;
@@ -32,18 +32,18 @@ void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProf
             printf("Tid: %d terminates due to divergence!\n", id);
             break;
         }
-        tStart = std::clock();
+        tStart = std::chrono::high_resolution_clock::now();
         st = S[rand() % n];
         learner->update(X.col(st), y.col(st), learningRate);
-        tEnd = std::clock();
+        tEnd = std::chrono::high_resolution_clock::now();
         // record the runtime and loss function
-        elapsedTime = double(tEnd - tStart) / CLOCKS_PER_SEC;
-        if ((t + 1) % sgdProfile->T == 0) 
+        elapsedTime = tEnd - tStart;
+        if ((global_t + 1) % sgdProfile->T == 0) 
             curLoss = learner->computeLoss(X, y);
         // critical area
         sgdProfile->profile_lock.lock();
-        sgdProfile->times.push_back(elapsedTime);
-        if ((t + 1) % sgdProfile->T == 0) sgdProfile->objs.push_back(curLoss);
+        sgdProfile->times.push_back(elapsedTime.count());
+        if ((global_t + 1) % sgdProfile->T == 0) sgdProfile->objs.push_back(curLoss);
         sgdProfile->profile_lock.unlock();
         // check divergence
         if (!sgdProfile->objs.empty() && sgdProfile->objs.back() > 1.1 * sgdProfile->objs[0]) {
@@ -54,10 +54,11 @@ void serialSGD(Learner* learner, const arma::mat& X, const arma::mat& y, SGDProf
             printf("Tid %d: Divergence, NAN exists in the loss function!\n", id);
         }
         // print 
-        if ((t + 1) % logsettings.print_period == 0) 
+        if ((global_t + 1) % logsettings.print_period == 0) 
             printf("Tid: %d, epoch: %d, data index: %d, obj= %f, time= %f\n", \
-                id, t + 1, st, sgdProfile->objs[t / sgdProfile->T], 
-                std::accumulate(sgdProfile->times.begin() + t - logsettings.print_period, sgdProfile->times.begin() + t, 0.0));
+                id, global_t + 1, st, sgdProfile->objs[global_t / sgdProfile->T], 
+                std::accumulate(sgdProfile->times.begin() + global_t - logsettings.print_period, sgdProfile->times.begin() + global_t, 0.0));
+        global_t++;
     }
     printf("Thread %d finished.\n", id);
 }
