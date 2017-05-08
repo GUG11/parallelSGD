@@ -15,13 +15,12 @@ import os, time
 import glob
 
 if __name__ == '__main__':
-    ns = [2000, 5000, 10000]
+    ns = [500, 1000, 2000, 5000, 10000]
     Ps = [1, 2, 4, 8]
     schemes = ['random', 'corr']
     nit = 100000
     lo, hi, tol = 0, 0.01, 0.01
     relax = 0.8
-    colors = 'bgrcmykw'
 
     filedir = os.path.join('..', 'results', 'real_data', 'MNIST', 'hogwild')
     mnist_dir = os.path.join('..', 'data', 'MNIST')

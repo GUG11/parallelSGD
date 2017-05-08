@@ -27,17 +27,21 @@ int main(int argc, char* argv[]) {
     Correlation corr;
     RandomPartition rPart;
     std::vector<std::vector<int>> dataPartition_r, dataPartition_c;
+    double avg_intra_corr = 0, avg_inter_corr = 0;
     printf("Compute correlation\n");
     xcorr(X, X, corr);   
     printf("Partition\n");
     arma::mat edgeMat = arma::abs(corr.corr);
     rPart.partition(edgeMat, k, dataPartition_r);
-    bmcPart.partition(edgeMat, k, dataPartition_c);  
+    bmcPart.partition(edgeMat, k, dataPartition_c);
     PartMetrics pmetrics_c(edgeMat, dataPartition_c), pmetrics_r(edgeMat, dataPartition_r);
     printf("Correlation min cut\n");
     pmetrics_c.printMetrics();
+    pmetrics_c.average(avg_intra_corr, avg_inter_corr);
+    printf("Average intra:%f, inter:%f\n", avg_intra_corr, avg_inter_corr);
     printf("Random partition\n");
     pmetrics_r.printMetrics();
+    
     // save results
     std::string fileDir = "../results/real_data/MNIST/partitions";
     std::string filePattern = "_n" + std::to_string(n) + "_k" + std::to_string(k) + ".csv";

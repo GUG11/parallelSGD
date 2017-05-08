@@ -23,7 +23,6 @@ if __name__ == '__main__':
     nit = 100000
     lo, hi, tol = 0, 0.01, 1e-4
     relax = 0.8
-    colors = 'bgrcmykw'
     for s in ss:
         filedir = os.path.join('..','results','simulations', 'Gaussian' + str(s), 'hogwild')
         if not os.path.exists(filedir):

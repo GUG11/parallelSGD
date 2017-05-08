@@ -29,6 +29,7 @@ int main(int argc, char* argv[]) {
     LogSettings logsettings(atoi(argv[6]), atoi(argv[7]));
     std::string partMethod = argv[8];
     bool save = 9 < argc;
+    double testingAccuracy = 0, trainingAccuracy = 0;
     images = trainingImages.cols(0, n-1);
     labels = trainingLabels.cols(0, n-1);
     SGDProfile sgdProfile;
@@ -42,8 +43,10 @@ int main(int argc, char* argv[]) {
             hogwild(&learner, images, labels, bmcPart, sgdProfile, learningRate, numIters, logsettings, num_threads);
         predictedTrainingLabels = learner.predict(images);
         predictedTestingLabels = learner.predict(testingImages);
-        printf("Final training accuracy: %f\n", accuracy(predictedTrainingLabels, labels));
-        printf("Final testing accuracy: %f\n", accuracy(predictedTestingLabels, testingLabels));
+        trainingAccuracy = accuracy(predictedTrainingLabels, labels);
+        testingAccuracy = accuracy(predictedTestingLabels, testingLabels);
+        printf("Final training accuracy: %f\n", trainingAccuracy);
+        printf("Final testing accuracy: %f\n", testingAccuracy);
     } catch (std::exception& e) {
         std::cout << "Catch exception " << e.what();
         exit(EXIT_FAILURE);
@@ -51,6 +54,7 @@ int main(int argc, char* argv[]) {
     if (save) {
         try {
             writeSGDProfile("../results/real_data/MNIST/hogwild", partMethod + "_n" + std::to_string(n) + "_T" + std::to_string(numIters) + "_ths" + std::to_string(num_threads) + "_gamma" + std::to_string(learningRate), sgdProfile);
+            writeAccuracy("../results/real_data/MNIST/hogwild", "accuracy.txt", partMethod, n, num_threads, trainingAccuracy, testingAccuracy);
         } catch (std::exception& e) {
             std::cout << "Catch exception " << e.what();
             exit(EXIT_FAILURE);

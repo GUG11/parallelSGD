@@ -18,6 +18,7 @@ struct PartMetrics {
 
     PartMetrics(const arma::mat& edgeMat, const std::vector<std::vector<int>>& dataPartition);    
     void printMetrics();
+    void average(double& avg_intra, double& avg_inter);
 };
 
 void xcorr(const arma::mat& X, const arma::mat& Y, Correlation& correlation);   // X (d x n); Y (d x m)

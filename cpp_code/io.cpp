@@ -1,6 +1,7 @@
 #include "io.h"
 #include <fstream>
 #include <stdexcept>
+#include <iostream>
 #include <iomanip>
 #include <algorithm>
 
@@ -12,6 +13,7 @@ bool writeSGDProfile(const std::string& filedir, const std::string& filename, co
     std::ofstream ofs;
     int n = sgdProfile.times.size();
     double timeCost = 0;
+    std::cout << "write result to " << filePath << std::endl;
     ofs.open(filePath, std::ofstream::out | std::ofstream::trunc);
     if (ofs.is_open()) {
         ofs.setf(std::ios::scientific, std::ios::floatfield);
@@ -23,6 +25,18 @@ bool writeSGDProfile(const std::string& filedir, const std::string& filename, co
                 ofs << std::setw(WIDTH) << i + 1 << std::setw(WIDTH) << timeCost << std::setw(WIDTH) << sgdProfile.objs[i / sgdProfile.T] << std::endl;
             }
         }
+    } else throw std::runtime_error("File open failure.\n");
+    ofs.close();
+    return true;
+}
+
+bool writeAccuracy(const std::string& filedir, const std::string& filename, std::string& scheme, int training_number, int num_threads, double training_accuracy, double testing_accuracy) {
+    std::string filePath = filedir + SEPARATOR + filename;
+    std::ofstream ofs;
+    std::cout << "write result to " << filePath << std::endl;
+    ofs.open(filePath, std::ofstream::out | std::ofstream::app);
+    if (ofs.is_open()) {
+        ofs << "scheme:" << scheme << "\ttraining number:" << training_number << "\tthreads:" << num_threads << "\ttraining accuracy:" << training_accuracy << "\ttesting accuracy:" << testing_accuracy << std::endl;
     } else throw std::runtime_error("File open failure.\n");
     ofs.close();
     return true;

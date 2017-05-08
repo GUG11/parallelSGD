@@ -22,18 +22,19 @@ def parseData(contents):
 
 if __name__ == '__main__':
     matplotlib.rcParams.update({'font.size': 30})
-    ns = [2000, 5000, 10000]
+    ns = [1000, 2000, 5000]
     Ps = [1, 2, 4, 8]
     schemes = ['random', 'corr']
     linestyles = ['-', '--']
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
     nit = 100000
     filedir = os.path.join('..', 'results', 'real_data', 'MNIST', 'hogwild')
     for n in ns:
-        for P in Ps:
-            fig = plt.figure(num=1, figsize=(20, 12))
-            ax = fig.add_subplot(1,1,1)
+        fig = plt.figure(num=1, figsize=(20, 12))
+        ax = fig.add_subplot(1,1,1)
+        for P, color in zip(Ps, colors):
 
-            for i, (linestyle, scheme) in enumerate(zip(linestyles, schemes)):
+            for linestyle, scheme in zip(linestyles, schemes):
                 filepattern = '%s_n%d_T%d_ths%d_gamma*' % (scheme, n, nit, P)
                 filepath = os.path.join(filedir, filepattern)
                 filepathc = glob.glob(filepath)
@@ -49,23 +50,23 @@ if __name__ == '__main__':
                     # gammas.append(gamma)
                     epoches, times, losses = parseData(contents)
                     x = np.array(epoches)
-                    y = np.array(losses)
+                    y = np.log(np.array(losses))
                     # ys.append(y)
                 # ys = np.array(ys)
                 # yssum = np.sum(ys, axis=1)
                 # opt = np.argmin(yssum)
-                    ax.plot(x, y, ls=linestyle, label='%s: step=%s' % (scheme, gamma), lw=2)
+                    ax.plot(x, y, color=color, ls=linestyle, label='%s: threads=%d, step=%s' % (scheme, P, gamma), lw=2)
 
-            utils.set_axis(ax, xlabel='iterations', ylabel='log(loss)', xticks=None, yticks=None, xlim=None, fontsize=30)
-            plt.tight_layout()
-            savefile = 'n%d_T%d_ths%d.svg' % (n, nit, P)
-            save_dir = os.path.join(filedir, savefile)
-            fig.savefig(save_dir)
-            savefile = 'n%d_T%d_ths%d.pdf' % (n, nit, P)
-            save_dir = os.path.join(filedir, savefile)
-            fig.savefig(save_dir)
-            savefile = 'n%d_T%d_ths%d.jpg' % (n, nit, P)
-            save_dir = os.path.join(filedir, savefile)
-            fig.savefig(save_dir)
-            plt.cla()
-            print('succeed saving %s' % save_dir)
+        utils.set_axis(ax, xlabel='iterations', ylabel='loss', xticks=None, yticks=None, xlim=None, fontsize=30)
+        plt.tight_layout()
+        savefile = 'n%d_T%d.svg' % (n, nit)
+        save_dir = os.path.join(filedir, savefile)
+        fig.savefig(save_dir)
+        savefile = 'n%d_T%d.pdf' % (n, nit)
+        save_dir = os.path.join(filedir, savefile)
+        fig.savefig(save_dir)
+        savefile = 'n%d_T%d.jpg' % (n, nit)
+        save_dir = os.path.join(filedir, savefile)
+        fig.savefig(save_dir)
+        plt.cla()
+        print('succeed saving %s' % save_dir)

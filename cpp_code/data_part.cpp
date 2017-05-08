@@ -38,6 +38,20 @@ void PartMetrics::printMetrics() {
     aveWeights.print("Average weight\n");
 }
 
+void PartMetrics::average(double& avg_intra, double& avg_inter) {
+    int k = aveWeights.n_rows;
+    avg_intra = 0;
+    avg_inter = 0;
+    for (int i = 0; i < k; i++) {
+        avg_intra += aveWeights.at(i, i);
+        for (int j = i + 1; j < k; j++) {
+            avg_inter += aveWeights.at(i, j);
+        }
+    }
+    avg_intra /= k;
+    avg_inter /= k * (k-1) / 2;
+}
+
 void RandomPartition::partition(const arma::mat& edgeMat, int P, std::vector<std::vector<int>>& dataPartition) {
     assert(edgeMat.n_rows==edgeMat.n_cols);
     partition(edgeMat.n_rows, P, dataPartition);
